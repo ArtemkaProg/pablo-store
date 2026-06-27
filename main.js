@@ -16,9 +16,7 @@ const SAMPLE_PRODUCTS = [
     price: 29.99,
     thumbnailPath: "images/robot-thumb.jpg",
     imagePaths: [
-      "images/model1.png",
-      "images/robot-2.jpg",
-      "images/robot-3.jpg"
+      "images/model1.png"
     ],
     downloadFilePath: "downloads/robot-model.zip"
   },
@@ -30,8 +28,8 @@ const SAMPLE_PRODUCTS = [
     price: 49.99,
     thumbnailPath: "images/castle-thumb.jpg",
     imagePaths: [
-      "images/castle-1.jpg",
-      "images/castle-2.jpg"
+      // "images/castle-1.jpg",
+      // "images/castle-2.jpg"
     ],
     downloadFilePath: "downloads/castle-model.zip"
   },
@@ -43,9 +41,9 @@ const SAMPLE_PRODUCTS = [
     price: 39.99,
     thumbnailPath: "images/spaceship-thumb.jpg",
     imagePaths: [
-      "images/spaceship-1.jpg",
-      "images/spaceship-2.jpg",
-      "images/spaceship-3.jpg"
+      // "images/spaceship-1.jpg",
+      // "images/spaceship-2.jpg",
+      // "images/spaceship-3.jpg"
     ],
     downloadFilePath: "downloads/spaceship-model.zip"
   }
