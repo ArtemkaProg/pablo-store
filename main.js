@@ -14,9 +14,9 @@ const SAMPLE_PRODUCTS = [
     shortDescription: "Futuristic humanoid robot model",
     fullDescription: "Highly detailed sci-fi robot with moving parts. Perfect for games, visualizations, and renders. Includes textures and materials.",
     price: 29.99,
-    thumbnailPath: "images/robot-thumb.jpg",
+    thumbnailPath: "images/thumbnail1.png",
     imagePaths: [
-      "images/model1.png"
+      // "images/model1.png"
     ],
     downloadFilePath: "downloads/robot-model.zip"
   },
