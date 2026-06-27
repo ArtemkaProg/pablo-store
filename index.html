@@ -10,11 +10,10 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- NAVIGATION -->
   <nav class="navbar">
     <div class="navbar-container">
       <a href="index.html" class="navbar-logo">
-        <span></span> ModelShop
+        <span>🎯</span> ModelShop
       </a>
       <div class="hamburger" id="hamburger">
         <span></span>
@@ -28,7 +27,6 @@
     </div>
   </nav>
 
-  <!-- HERO SECTION -->
   <section class="hero">
     <div class="container">
       <h1>3D Models for Creators</h1>
@@ -36,7 +34,6 @@
     </div>
   </section>
 
-  <!-- MAIN CONTENT -->
   <section class="section">
     <div class="container">
       <h2>Our Collections</h2>
@@ -46,7 +43,6 @@
     </div>
   </section>
 
-  <!-- CONTACT SECTION -->
   <section class="section section-light" id="contact">
     <div class="container">
       <h2>Get in Touch</h2>
@@ -56,12 +52,10 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
   <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
     <div class="container">
       <p>&copy; 2024 3D Model Store. All rights reserved.</p>
       <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-        <!-- Admin link hidden from regular navigation -->
         <a href="admin.html" style="font-size: 0.8rem; opacity: 0.5;">Admin</a>
       </p>
     </div>
@@ -69,11 +63,6 @@
 
   <script src="main.js"></script>
   <script>
-    /**
-     * INDEX.JS - Catalog Page Logic
-     */
-
-    // Setup hamburger menu
     const hamburger = document.getElementById("hamburger");
     const navMenu = document.getElementById("navMenu");
 
@@ -82,26 +71,31 @@
         navMenu.classList.toggle("show");
       });
 
-      // Close menu when a link is clicked
-      navMenu.querySelectorAll("a").forEach(link => {
+      navMenu.querySelectorAll("a").forEach((link) => {
         link.addEventListener("click", () => {
           navMenu.classList.remove("show");
         });
       });
     }
 
-    // Load and display products
     function loadProductsCatalog() {
       const products = getProducts();
       const grid = document.getElementById("productGrid");
 
-      if (grid) {
-        grid.innerHTML = products.map(product => createProductCard(product)).join("");
+      if (!grid) {
+        return;
       }
+
+      if (!products.length) {
+        grid.innerHTML = '<div class="empty-state">No products yet. Add your first model from the admin panel.</div>';
+        return;
+      }
+
+      grid.innerHTML = products.map((product) => createProductCard(product)).join("");
     }
 
-    // Initialize page
     document.addEventListener("DOMContentLoaded", () => {
+      initializeStorage();
       loadProductsCatalog();
     });
   </script>

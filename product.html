@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product - 3D Model Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-logo">
+        <span>🎯</span> ModelShop
+      </a>
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="navbar-nav" id="navMenu">
+        <li><a href="index.html">Catalog</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="product-detail">
+    <div class="product-detail-container">
+      <div class="product-gallery">
+        <div class="gallery-main">
+          <img id="mainImage" src="images/placeholder.jpg" alt="Product preview">
+        </div>
+        <div class="gallery-thumbnails" id="thumbnails"></div>
+      </div>
+
+      <div class="product-details">
+        <h1 id="productName">Loading...</h1>
+        <p class="price" id="productPrice">$0.00</p>
+
+        <div class="product-description">
+          <p id="productFullDescription"></p>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" id="buyButton" type="button">Buy Now</button>
+          <button class="btn-secondary" id="inquiryToggle" type="button">Ask a Question</button>
+        </div>
+
+        <div class="inquiry-form hidden" id="inquiryFormContainer">
+          <h3>Ask the Creator</h3>
+          <div class="form-group">
+            <label for="inquiryName">Your Name</label>
+            <input type="text" id="inquiryName" placeholder="John Doe">
+          </div>
+          <div class="form-group">
+            <label for="inquiryEmail">Your Email</label>
+            <input type="email" id="inquiryEmail" placeholder="john@example.com">
+          </div>
+          <div class="form-group">
+            <label for="inquiryMessage">Message</label>
+            <textarea id="inquiryMessage" placeholder="What would you like to know about this model?"></textarea>
+          </div>
+          <button class="btn-primary btn-full-width" id="submitInquiry" type="button">Send Message</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
+    <div class="container">
+      <p>&copy; 2024 3D Model Store. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    const hamburger = document.getElementById("hamburger");
+    const navMenu = document.getElementById("navMenu");
+
+    if (hamburger) {
+      hamburger.addEventListener("click", () => {
+        navMenu.classList.toggle("show");
+      });
+
+      navMenu.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          navMenu.classList.remove("show");
+        });
+      });
+    }
+
+    function getProductIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("id");
+    }
+
+    function renderProduct() {
+      const productId = getProductIdFromUrl();
+      const product = getProductById(productId);
+
+      if (!product) {
+        document.body.innerHTML = "<div style='padding: 4rem; text-align: center; color: #e0e0ff;'><h1>Product not found</h1><p><a href='index.html'>Back to catalog</a></p></div>";
+        return;
+      }
+
+      document.title = `${product.name} - 3D Model Store`;
+      document.getElementById("productName").textContent = product.name;
+      document.getElementById("productPrice").textContent = `$${Number(product.price || 0).toFixed(2)}`;
+      document.getElementById("productFullDescription").textContent = product.fullDescription || "";
+      document.getElementById("buyButton").onclick = () => {
+        window.location.href = `checkout.html?productId=${product.id}`;
+      };
+
+      const gallery = Array.isArray(product.imagePaths) && product.imagePaths.length ? product.imagePaths : [product.thumbnailPath || "images/placeholder.jpg"];
+      const mainImage = document.getElementById("mainImage");
+      const thumbnails = document.getElementById("thumbnails");
+
+      mainImage.src = gallery[0] || "images/placeholder.jpg";
+      thumbnails.innerHTML = gallery.map((image, index) => `
+        <div class="gallery-thumbnail ${index === 0 ? "active" : ""}" onclick="setGalleryImage('${image}', this)">
+          <img src="${image}" alt="Preview ${index + 1}" onerror="this.src='images/placeholder.jpg'">
+        </div>
+      `).join("");
+    }
+
+    function setGalleryImage(imagePath, element) {
+      document.getElementById("mainImage").src = imagePath;
+      document.querySelectorAll(".gallery-thumbnail").forEach((item) => item.classList.remove("active"));
+      element.classList.add("active");
+    }
+
+    document.getElementById("inquiryToggle").addEventListener("click", () => {
+      document.getElementById("inquiryFormContainer").classList.toggle("hidden");
+    });
+
+    document.getElementById("submitInquiry").addEventListener("click", () => {
+      const productId = getProductIdFromUrl();
+      const name = document.getElementById("inquiryName").value.trim();
+      const email = document.getElementById("inquiryEmail").value.trim();
+      const message = document.getElementById("inquiryMessage").value.trim();
+
+      if (!name || !email || !message) {
+        alert("Please fill in your name, email, and message.");
+        return;
+      }
+
+      addInquiry(productId, name, email, message);
+      alert("Your question was saved. Thank you!");
+      document.getElementById("inquiryFormContainer").classList.add("hidden");
+      document.getElementById("inquiryName").value = "";
+      document.getElementById("inquiryEmail").value = "";
+      document.getElementById("inquiryMessage").value = "";
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeStorage();
+      renderProduct();
+    });
+  </script>
+</body>
+</html>

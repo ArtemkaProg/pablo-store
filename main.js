@@ -1,57 +1,41 @@
 /**
- * MAIN.JS - Shared JavaScript Logic
- * Handles: localStorage, navigation, UI interactions
+ * MAIN.JS - Shared app logic for the 3D model store.
+ * Handles localStorage, products, orders, inquiries, and reusable UI helpers.
  */
 
-// ============================================================
-// SAMPLE PRODUCTS DATA
-// Edit this array to add new products
-// ============================================================
 const SAMPLE_PRODUCTS = [
   {
     id: 1,
-    name: "Metal kettle",
-    shortDescription: "Just a metal kettle, low polygonal",
-    fullDescription: "Low polygonal metal kettle model, perfect for 3D rendering and game development. Includes textures and materials for realistic appearance.",
+    name: "Metal Kettle",
+    shortDescription: "Low-poly metal kettle model",
+    fullDescription: "A clean low-poly metal kettle model that works well for scenes, renders, and simple game assets.",
     price: 1.99,
     thumbnailPath: "images/kettle.jpg",
-    imagePaths: [
-      "images/kettle.jpg"
-    ],
+    imagePaths: ["images/kettle.jpg"],
     downloadFilePath: "downloads/MOKA_POT.zip"
   },
   {
     id: 2,
     name: "Medieval Castle",
     shortDescription: "Detailed fantasy castle model",
-    fullDescription: "Complete medieval castle with high polygon count. Includes interior and exterior details, perfect for game environments or architectural visualization.",
+    fullDescription: "A detailed medieval castle with strong silhouettes for game environments or visualizations.",
     price: 49.99,
     thumbnailPath: "images/castle-thumb.jpg",
-    imagePaths: [
-      // "images/castle-1.jpg",
-      // "images/castle-2.jpg"
-    ],
+    imagePaths: [],
     downloadFilePath: "downloads/castle-model.zip"
   },
   {
     id: 3,
     name: "Spaceship Voyager",
-    shortDescription: "Modern space exploration vessel",
-    fullDescription: "Sleek spacecraft design with detailed interior. Great for sci-fi projects, games, and 3D animation. Fully rigged and textured.",
+    shortDescription: "Modern spacecraft design",
+    fullDescription: "A sleek spacecraft with a polished sci-fi style, ready for games and animation scenes.",
     price: 39.99,
     thumbnailPath: "images/spaceship-thumb.jpg",
-    imagePaths: [
-      // "images/spaceship-1.jpg",
-      // "images/spaceship-2.jpg",
-      // "images/spaceship-3.jpg"
-    ],
+    imagePaths: [],
     downloadFilePath: "downloads/spaceship-model.zip"
   }
 ];
 
-// ============================================================
-// INITIALIZE LOCALSTORAGE WITH SAMPLE DATA
-// ============================================================
 function initializeStorage() {
   if (!localStorage.getItem("products")) {
     localStorage.setItem("products", JSON.stringify(SAMPLE_PRODUCTS));
@@ -66,17 +50,18 @@ function initializeStorage() {
   }
 }
 
-// ============================================================
-// UTILITY FUNCTIONS - LocalStorage
-// ============================================================
-
 function getProducts() {
   const data = localStorage.getItem("products");
   return data ? JSON.parse(data) : [];
 }
 
+function saveProducts(products) {
+  localStorage.setItem("products", JSON.stringify(products));
+}
+
 function getProductById(id) {
-  return getProducts().find(p => p.id == id);
+  const products = getProducts();
+  return products.find((product) => String(product.id) === String(id));
 }
 
 function getOrders() {
@@ -93,7 +78,7 @@ function addOrder(productId, buyerName, buyerEmail) {
   const orders = getOrders();
   const newOrder = {
     id: Date.now(),
-    productId: parseInt(productId),
+    productId: parseInt(productId, 10),
     buyerName,
     buyerEmail,
     timestamp: new Date().toISOString(),
@@ -108,7 +93,7 @@ function addInquiry(productId, buyerName, buyerEmail, message) {
   const inquiries = getInquiries();
   const newInquiry = {
     id: Date.now(),
-    productId: parseInt(productId),
+    productId: parseInt(productId, 10),
     buyerName,
     buyerEmail,
     message,
@@ -119,22 +104,60 @@ function addInquiry(productId, buyerName, buyerEmail, message) {
   return newInquiry;
 }
 
-// ============================================================
-// UTILITY FUNCTIONS - DOM & UI
-// ============================================================
+function createProductId() {
+  const products = getProducts();
+  const ids = products.map((product) => Number(product.id) || 0);
+  return ids.length ? Math.max(...ids) + 1 : 1;
+}
+
+function normalizeDownloadPath(value) {
+  const trimmed = (value || "").trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed.startsWith("downloads/") ? trimmed : `downloads/${trimmed}`;
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve("");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function readMultipleFilesAsDataURLs(files) {
+  return Promise.all(Array.from(files || []).map((file) => readFileAsDataURL(file)));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function createProductCard(product) {
+  const thumbnail = product.thumbnailPath || "images/placeholder.jpg";
   return `
     <div class="product-card">
       <div class="product-image">
-        <img src="${product.thumbnailPath}" alt="${product.name}" onerror="this.src='images/placeholder.jpg'">
+        <img src="${thumbnail}" alt="${escapeHtml(product.name)}" onerror="this.src='images/placeholder.jpg'">
       </div>
       <div class="product-info">
-        <h3>${product.name}</h3>
-        <p class="short-desc">${product.shortDescription}</p>
+        <h3>${escapeHtml(product.name)}</h3>
+        <p class="short-desc">${escapeHtml(product.shortDescription || "")}</p>
         <div class="product-footer">
-          <span class="price">$${product.price.toFixed(2)}</span>
-          <a href="product-${product.id}.html" class="btn-primary">View Details</a>
+          <span class="price">$${Number(product.price || 0).toFixed(2)}</span>
+          <a href="product.html?id=${product.id}" class="btn-primary">View Details</a>
         </div>
       </div>
     </div>
@@ -146,18 +169,9 @@ function formatDate(isoString) {
   return date.toLocaleDateString() + " " + date.toLocaleTimeString();
 }
 
-// ============================================================
-// NAVIGATION
-// ============================================================
-
 function setupNavigation() {
-  // This function can be expanded to add dynamic nav items
-  // For now, it's a placeholder for shared nav logic
+  // Shared nav logic can be extended here if needed.
 }
-
-// ============================================================
-// INIT ON PAGE LOAD
-// ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeStorage();
