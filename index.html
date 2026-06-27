@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Model Store - Premium Digital Models</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-logo">
+        <span>🎯</span> ModelShop
+      </a>
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="navbar-nav" id="navMenu">
+        <li><a href="index.html" class="active">Catalog</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div class="container">
+      <h1>Premium 3D Models for Creators</h1>
+      <p>High-quality digital assets for games, visualization, and animation projects</p>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <section class="section">
+    <div class="container">
+      <h2>Our Collections</h2>
+      <div class="product-grid" id="productGrid">
+        <!-- Products will be loaded here by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT SECTION -->
+  <section class="section section-light" id="contact">
+    <div class="container">
+      <h2>Get in Touch</h2>
+      <p>Have questions? Want to collaborate? Reach out to us!</p>
+      <p><strong>Email:</strong> contact@modelshop.com</p>
+      <p><strong>Phone:</strong> +1 (555) 123-4567</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
+    <div class="container">
+      <p>&copy; 2024 3D Model Store. All rights reserved.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+        <!-- Admin link hidden from regular navigation -->
+        <a href="admin.html" style="font-size: 0.8rem; opacity: 0.5;">Admin</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    /**
+     * INDEX.JS - Catalog Page Logic
+     */
+
+    // Setup hamburger menu
+    const hamburger = document.getElementById("hamburger");
+    const navMenu = document.getElementById("navMenu");
+
+    if (hamburger) {
+      hamburger.addEventListener("click", () => {
+        navMenu.classList.toggle("show");
+      });
+
+      // Close menu when a link is clicked
+      navMenu.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", () => {
+          navMenu.classList.remove("show");
+        });
+      });
+    }
+
+    // Load and display products
+    function loadProductsCatalog() {
+      const products = getProducts();
+      const grid = document.getElementById("productGrid");
+
+      if (grid) {
+        grid.innerHTML = products.map(product => createProductCard(product)).join("");
+      }
+    }
+
+    // Initialize page
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProductsCatalog();
+    });
+  </script>
+</body>
+</html>

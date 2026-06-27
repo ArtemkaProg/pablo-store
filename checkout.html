@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - 3D Model Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-logo">
+        <span>🎯</span> ModelShop
+      </a>
+      <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul class="navbar-nav" id="navMenu">
+        <li><a href="index.html">Catalog</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- CHECKOUT SECTION -->
+  <section class="section">
+    <div class="checkout-container">
+      <h1>Checkout</h1>
+
+      <!-- PROGRESS STEPS -->
+      <div class="checkout-steps">
+        <div class="checkout-step active">
+          <div class="step-number">1</div>
+          <p>Order Review</p>
+        </div>
+        <div class="checkout-step">
+          <div class="step-number">2</div>
+          <p>Payment</p>
+        </div>
+        <div class="checkout-step">
+          <div class="step-number">3</div>
+          <p>Download</p>
+        </div>
+      </div>
+
+      <!-- ORDER SUMMARY -->
+      <div class="order-summary" id="orderSummary">
+        <h3>Order Summary</h3>
+        <div class="summary-item">
+          <span id="productNameSummary">Loading...</span>
+          <span id="productPriceSummary">$0.00</span>
+        </div>
+        <div class="summary-total">
+          Total: <span id="totalPrice">$0.00</span>
+        </div>
+      </div>
+
+      <!-- BUYER INFO FORM -->
+      <div class="checkout-form" id="buyerForm">
+        <h3>Billing Information</h3>
+        <div class="form-group">
+          <label for="buyerName">Full Name *</label>
+          <input type="text" id="buyerName" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label for="buyerEmail">Email Address *</label>
+          <input type="email" id="buyerEmail" placeholder="john@example.com" required>
+        </div>
+      </div>
+
+      <!-- PAYMENT SECTION -->
+      <div class="checkout-form" id="paymentSection">
+        <h3>Payment Method</h3>
+        
+        <!-- Stripe Placeholder -->
+        <div class="stripe-placeholder">
+          <p style="font-size: 1.1rem; margin-bottom: 1rem;">🔐 Secure Payment with Stripe</p>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Click the button below to proceed to Stripe payment gateway.<br>
+            <small>Replace this with your actual Stripe Checkout link once configured.</small>
+          </p>
+          <a href="https://buy.stripe.com/YOUR_LINK_HERE" class="btn-primary" target="_blank" id="stripeLink">
+            Pay Now with Stripe
+          </a>
+          <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">
+            <strong>For testing:</strong> After clicking the Stripe button, return and click "Payment Complete" below to unlock your download.
+          </p>
+        </div>
+
+        <!-- Payment Confirmation (Mock) -->
+        <button class="btn-success btn-full-width" onclick="confirmPayment()">
+          Payment Complete - Unlock Download
+        </button>
+      </div>
+
+      <!-- SUCCESS & DOWNLOAD -->
+      <div class="payment-success" id="paymentSuccess">
+        <h3 style="color: var(--success); margin-bottom: 1rem;">✓ Payment Successful!</h3>
+        <p>Thank you for your purchase! Your download is ready below.</p>
+        
+        <div style="margin-top: 2rem; padding: 1.5rem; background-color: rgba(0, 208, 132, 0.1); border-radius: 6px;">
+          <p style="margin-bottom: 1rem;">
+            <strong>Download:</strong> <span id="downloadFileName">Model</span>
+          </p>
+          <a href="#" id="downloadLink" class="download-link">
+            ⬇️ Download Now
+          </a>
+          <p style="font-size: 0.85rem; margin-top: 1rem; color: var(--text-secondary);">
+            Your order has been saved to your browser storage.
+          </p>
+        </div>
+
+        <div style="margin-top: 2rem;">
+          <a href="index.html" class="btn-secondary">← Back to Catalog</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
+    <div class="container">
+      <p>&copy; 2024 3D Model Store. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    /**
+     * CHECKOUT PAGE LOGIC
+     */
+
+    let currentProduct = null;
+    let currentOrder = null;
+
+    // Setup hamburger menu
+    const hamburger = document.getElementById("hamburger");
+    const navMenu = document.getElementById("navMenu");
+
+    if (hamburger) {
+      hamburger.addEventListener("click", () => {
+        navMenu.classList.toggle("show");
+      });
+
+      navMenu.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", () => {
+          navMenu.classList.remove("show");
+        });
+      });
+    }
+
+    // Get product ID from URL parameters
+    function getProductIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("productId");
+    }
+
+    // Load product and initialize checkout
+    function initializeCheckout() {
+      const productId = getProductIdFromUrl();
+
+      if (!productId) {
+        document.body.innerHTML = "<div style='text-align: center; padding: 5rem; color: #e0e0ff;'><h1>No product selected</h1><p><a href='index.html'>Back to Catalog</a></p></div>";
+        return;
+      }
+
+      currentProduct = getProductById(productId);
+
+      if (!currentProduct) {
+        document.body.innerHTML = "<div style='text-align: center; padding: 5rem; color: #e0e0ff;'><h1>Product not found</h1><p><a href='index.html'>Back to Catalog</a></p></div>";
+        return;
+      }
+
+      // Display product info
+      document.getElementById("productNameSummary").textContent = currentProduct.name;
+      document.getElementById("productPriceSummary").textContent = `$${currentProduct.price.toFixed(2)}`;
+      document.getElementById("totalPrice").textContent = `$${currentProduct.price.toFixed(2)}`;
+
+      // Set Stripe link (seller needs to replace with real Stripe URL)
+      // Example format: https://buy.stripe.com/test_14k6qKa0JexHbZC28d
+      const stripeLink = document.getElementById("stripeLink");
+      stripeLink.href = "https://buy.stripe.com/YOUR_LINK_HERE";
+    }
+
+    // Confirm payment and show download
+    function confirmPayment() {
+      const name = document.getElementById("buyerName").value.trim();
+      const email = document.getElementById("buyerEmail").value.trim();
+
+      if (!name || !email) {
+        alert("Please fill in your name and email");
+        return;
+      }
+
+      if (!currentProduct) {
+        alert("Product not found");
+        return;
+      }
+
+      // Save order to localStorage
+      currentOrder = addOrder(currentProduct.id, name, email);
+
+      // Hide form and show success
+      document.getElementById("buyerForm").classList.add("hidden");
+      document.getElementById("paymentSection").classList.add("hidden");
+      document.getElementById("paymentSuccess").classList.add("show");
+
+      // Setup download link
+      document.getElementById("downloadFileName").textContent = currentProduct.name + ".zip";
+      document.getElementById("downloadLink").href = currentProduct.downloadFilePath;
+
+      // Update progress
+      document.querySelectorAll(".checkout-step")[0].classList.remove("active");
+      document.querySelectorAll(".checkout-step")[1].classList.add("active");
+      document.querySelectorAll(".checkout-step")[2].classList.add("active");
+    }
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeCheckout();
+    });
+  </script>
+</body>
+</html>
