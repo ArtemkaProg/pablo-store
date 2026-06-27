@@ -16,7 +16,7 @@ const SAMPLE_PRODUCTS = [
     price: 29.99,
     thumbnailPath: "images/robot-thumb.jpg",
     imagePaths: [
-      "images/robot-1.jpg",
+      "images/model1.png",
       "images/robot-2.jpg",
       "images/robot-3.jpg"
     ],
