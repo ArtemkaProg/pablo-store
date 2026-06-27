@@ -10,15 +10,15 @@
 const SAMPLE_PRODUCTS = [
   {
     id: 1,
-    name: "Sci-Fi Robot",
-    shortDescription: "Futuristic humanoid robot model",
-    fullDescription: "Highly detailed sci-fi robot with moving parts. Perfect for games, visualizations, and renders. Includes textures and materials.",
-    price: 29.99,
-    thumbnailPath: "images/thumbnail1.png",
+    name: "Metal kettle",
+    shortDescription: "Just a metal kettle, low polygonal",
+    fullDescription: "Low polygonal metal kettle model, perfect for 3D rendering and game development. Includes textures and materials for realistic appearance.",
+    price: 1.99,
+    thumbnailPath: "images/kettle.jpg",
     imagePaths: [
-      // "images/model1.png"
+      "images/kettle.jpg"
     ],
-    downloadFilePath: "downloads/robot-model.zip"
+    downloadFilePath: "downloads/MOKA_POT.zip"
   },
   {
     id: 2,
