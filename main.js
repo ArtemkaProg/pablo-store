@@ -1,7 +1,17 @@
 /**
  * MAIN.JS - Shared app logic for the 3D model store.
- * Handles localStorage, products, orders, inquiries, and reusable UI helpers.
+ * Uses Firebase Firestore instead of localStorage so the store is shared.
  */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAlnOyNqYSW7JJNZEMr8iTQgaS6-7lhWIU",
+  authDomain: "pablo-store-45338.firebaseapp.com",
+  projectId: "pablo-store-45338",
+  storageBucket: "pablo-store-45338.firebasestorage.app",
+  messagingSenderId: "879023640155",
+  appId: "1:879023640155:web:97a6b78905957ca908f97e",
+  measurementId: "G-L7XFXH0MFY"
+};
 
 const SAMPLE_PRODUCTS = [
   {
@@ -36,76 +46,117 @@ const SAMPLE_PRODUCTS = [
   }
 ];
 
-function initializeStorage() {
-  if (!localStorage.getItem("products")) {
-    localStorage.setItem("products", JSON.stringify(SAMPLE_PRODUCTS));
+let db = null;
+
+function initializeFirebase() {
+  if (db) {
+    return Promise.resolve(db);
   }
 
-  if (!localStorage.getItem("orders")) {
-    localStorage.setItem("orders", JSON.stringify([]));
+  if (typeof firebase === "undefined") {
+    throw new Error("Firebase SDK is not loaded.");
   }
 
-  if (!localStorage.getItem("inquiries")) {
-    localStorage.setItem("inquiries", JSON.stringify([]));
+  const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+  db = app.firestore();
+  return Promise.resolve(db);
+}
+
+async function initializeStorage() {
+  await initializeFirebase();
+  const products = await getProducts();
+  if (!products.length) {
+    await seedSampleProducts();
   }
 }
 
-function getProducts() {
-  const data = localStorage.getItem("products");
-  return data ? JSON.parse(data) : [];
+async function seedSampleProducts() {
+  if (!db) {
+    await initializeFirebase();
+  }
+
+  const batch = db.batch();
+  SAMPLE_PRODUCTS.forEach((product) => {
+    const ref = db.collection("products").doc(String(product.id));
+    batch.set(ref, {
+      ...product,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+
+  await batch.commit();
 }
 
-function saveProducts(products) {
-  localStorage.setItem("products", JSON.stringify(products));
+async function getProducts() {
+  await initializeFirebase();
+  const snapshot = await db.collection("products").get();
+  return snapshot.docs.map((doc) => ({ id: Number(doc.id), ...doc.data() }));
 }
 
-function getProductById(id) {
-  const products = getProducts();
-  return products.find((product) => String(product.id) === String(id));
+async function saveProducts(products) {
+  await initializeFirebase();
+  const batch = db.batch();
+  products.forEach((product) => {
+    const ref = db.collection("products").doc(String(product.id));
+    batch.set(ref, {
+      ...product,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  await batch.commit();
 }
 
-function getOrders() {
-  const data = localStorage.getItem("orders");
-  return data ? JSON.parse(data) : [];
+async function getProductById(id) {
+  await initializeFirebase();
+  const ref = await db.collection("products").doc(String(id)).get();
+  return ref.exists ? { id: Number(ref.id), ...ref.data() } : null;
 }
 
-function getInquiries() {
-  const data = localStorage.getItem("inquiries");
-  return data ? JSON.parse(data) : [];
+async function deleteProductById(id) {
+  await initializeFirebase();
+  await db.collection("products").doc(String(id)).delete();
 }
 
-function addOrder(productId, buyerName, buyerEmail) {
-  const orders = getOrders();
-  const newOrder = {
-    id: Date.now(),
-    productId: parseInt(productId, 10),
+async function getOrders() {
+  await initializeFirebase();
+  const snapshot = await db.collection("orders").orderBy("timestamp", "desc").get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
+async function getInquiries() {
+  await initializeFirebase();
+  const snapshot = await db.collection("inquiries").orderBy("timestamp", "desc").get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
+async function addOrder(productId, buyerName, buyerEmail) {
+  await initializeFirebase();
+  const payload = {
+    productId: Number(productId),
     buyerName,
     buyerEmail,
     timestamp: new Date().toISOString(),
     downloadUnlocked: true
   };
-  orders.push(newOrder);
-  localStorage.setItem("orders", JSON.stringify(orders));
-  return newOrder;
+  const ref = await db.collection("orders").add(payload);
+  return { id: ref.id, ...payload };
 }
 
-function addInquiry(productId, buyerName, buyerEmail, message) {
-  const inquiries = getInquiries();
-  const newInquiry = {
-    id: Date.now(),
-    productId: parseInt(productId, 10),
+async function addInquiry(productId, buyerName, buyerEmail, message) {
+  await initializeFirebase();
+  const payload = {
+    productId: Number(productId),
     buyerName,
     buyerEmail,
     message,
     timestamp: new Date().toISOString()
   };
-  inquiries.push(newInquiry);
-  localStorage.setItem("inquiries", JSON.stringify(inquiries));
-  return newInquiry;
+  const ref = await db.collection("inquiries").add(payload);
+  return { id: ref.id, ...payload };
 }
 
-function createProductId() {
-  const products = getProducts();
+async function createProductId() {
+  const products = await getProducts();
   const ids = products.map((product) => Number(product.id) || 0);
   return ids.length ? Math.max(...ids) + 1 : 1;
 }
@@ -174,6 +225,8 @@ function setupNavigation() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initializeStorage();
+  initializeStorage().catch((error) => {
+    console.error("Firestore initialization failed", error);
+  });
   setupNavigation();
 });

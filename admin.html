@@ -12,20 +12,16 @@
 <body>
   <nav class="navbar">
     <div class="navbar-container">
-      <a href="index.html" class="navbar-logo">
-        <span></span> ModelShop
-      </a>
+      <a href="index.html" class="navbar-logo">ModelShop</a>
       <ul class="navbar-nav">
-        <li><a href="index.html">← Back to Store</a></li>
+        <li><a href="index.html">Back to Store</a></li>
       </ul>
     </div>
   </nav>
 
   <section class="admin-container">
     <h1>Admin Dashboard</h1>
-    <p class="text-muted mb-3">
-      Add, edit, and delete products visually. Everything is stored in your browser via localStorage.
-    </p>
+    <p class="text-muted mb-3">Manage products, orders, and inquiries. Everything is stored in Firestore.</p>
 
     <div class="admin-stats">
       <div class="stat-card">
@@ -37,25 +33,14 @@
         <div class="stat-label">Total Inquiries</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="totalRevenue">$0.00</div>
-        <div class="stat-label">Total Revenue</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-number" id="totalProducts">0</div>
         <div class="stat-label">Products</div>
       </div>
     </div>
 
-    <div class="action-buttons-admin">
-      <button class="admin-export" type="button" onclick="exportDataAsJSON()">📥 Export Data (JSON)</button>
-      <button class="admin-export" type="button" onclick="clearAllData()" style="border-color: var(--error); color: var(--error);">🗑️ Clear All Data</button>
-      <button class="admin-export" type="button" onclick="loadSampleData()">🔄 Load Sample Data</button>
-    </div>
-
     <div class="admin-grid">
-      <section class="admin-card admin-panel-card">
+      <section class="admin-card">
         <h2>Add or Edit Product</h2>
-        <p class="text-muted">Upload images and enter the filename for the download zip. The file should be placed in the downloads folder.</p>
         <form id="productForm" onsubmit="handleProductSubmit(event)">
           <input type="hidden" id="productId" value="">
           <div class="form-group">
@@ -79,13 +64,12 @@
             <input id="thumbnailImage" type="file" accept="image/*">
           </div>
           <div class="form-group">
-            <label for="galleryImages">Gallery images (optional)</label>
+            <label for="galleryImages">Gallery images</label>
             <input id="galleryImages" type="file" accept="image/*" multiple>
           </div>
           <div class="form-group">
             <label for="downloadFileName">Download file name</label>
             <input id="downloadFileName" type="text" placeholder="model.zip">
-            <small class="field-hint">Put the file in the downloads folder and enter the filename here.</small>
           </div>
           <div class="form-actions">
             <button class="btn-primary" type="submit">Save Product</button>
@@ -94,69 +78,44 @@
         </form>
       </section>
 
-      <section class="admin-card admin-panel-card">
+      <section class="admin-card">
         <h2>Current Products</h2>
         <div id="productList"></div>
       </section>
     </div>
 
     <div class="admin-section">
-      <h2>Orders by Product</h2>
-      <div id="ordersContainer">
-        <p class="empty-state">No orders yet</p>
-      </div>
+      <h2>Orders</h2>
+      <div id="ordersContainer"></div>
     </div>
 
     <div class="admin-section">
-      <h2>Customer Inquiries by Product</h2>
-      <div id="inquiriesContainer">
-        <p class="empty-state">No inquiries yet</p>
-      </div>
-    </div>
-
-    <div class="admin-section">
-      <h2>Raw Data (localStorage)</h2>
-      <p class="text-muted mb-2">This is the raw JSON data stored in your browser. You can save it as a backup.</p>
-      <div class="raw-data-box">
-        <pre id="rawData">{}</pre>
-      </div>
+      <h2>Inquiries</h2>
+      <div id="inquiriesContainer"></div>
     </div>
   </section>
 
-  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary); margin-top: 3rem;">
-    <div class="container">
-      <p>&copy; 2024 3D Model Store Admin Panel.</p>
-    </div>
-  </footer>
-
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="main.js"></script>
   <script>
     let editingProductId = null;
 
-    function loadAdminDashboard() {
-      const products = getProducts();
-      const orders = getOrders();
-      const inquiries = getInquiries();
+    async function loadAdminDashboard() {
+      const products = await getProducts();
+      const orders = await getOrders();
+      const inquiries = await getInquiries();
 
       document.getElementById("totalOrders").textContent = orders.length;
       document.getElementById("totalInquiries").textContent = inquiries.length;
       document.getElementById("totalProducts").textContent = products.length;
-
-      const totalRevenue = orders.reduce((sum, order) => {
-        const product = products.find((item) => item.id === order.productId);
-        return sum + (product ? product.price : 0);
-      }, 0);
-      document.getElementById("totalRevenue").textContent = `$${totalRevenue.toFixed(2)}`;
-
       renderProductList(products);
-      displayOrdersByProduct(products, orders);
-      displayInqueriesByProduct(products, inquiries);
-      displayRawData(products, orders, inquiries);
+      renderOrders(orders, products);
+      renderInquiries(inquiries, products);
     }
 
     function renderProductList(products) {
       const container = document.getElementById("productList");
-
       if (!products.length) {
         container.innerHTML = '<div class="empty-state">No products yet.</div>';
         return;
@@ -171,18 +130,56 @@
           </div>
           <div class="product-admin-actions">
             <button class="btn-secondary" type="button" onclick="editProduct(${product.id})">Edit</button>
-            <button class="btn-secondary" type="button" onclick="deleteProduct(${product.id})" style="border-color: var(--error); color: var(--error);">Delete</button>
+            <button class="btn-secondary" type="button" onclick="deleteProduct(${product.id})">Delete</button>
           </div>
         </div>
       `).join("");
     }
 
-    function editProduct(id) {
-      const product = getProductById(id);
-      if (!product) {
+    function renderOrders(orders, products) {
+      const container = document.getElementById("ordersContainer");
+      if (!orders.length) {
+        container.innerHTML = '<div class="empty-state">No orders yet.</div>';
         return;
       }
 
+      container.innerHTML = orders.map((order) => {
+        const product = products.find((item) => Number(item.id) === Number(order.productId));
+        return `
+          <div class="inquiry-card">
+            <p><strong>${escapeHtml(order.buyerName)}</strong> — ${escapeHtml(order.buyerEmail)}</p>
+            <p>Product: ${escapeHtml(product ? product.name : "Unknown")}</p>
+            <p class="text-muted">${formatDate(order.timestamp)}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderInquiries(inquiries, products) {
+      const container = document.getElementById("inquiriesContainer");
+      if (!inquiries.length) {
+        container.innerHTML = '<div class="empty-state">No inquiries yet.</div>';
+        return;
+      }
+
+      container.innerHTML = inquiries.map((inquiry) => {
+        const product = products.find((item) => Number(item.id) === Number(inquiry.productId));
+        return `
+          <div class="inquiry-card">
+            <p><strong>${escapeHtml(inquiry.buyerName)}</strong> — ${escapeHtml(inquiry.buyerEmail)}</p>
+            <p>${escapeHtml(inquiry.message)}</p>
+            <p>Product: ${escapeHtml(product ? product.name : "Unknown")}</p>
+            <p class="text-muted">${formatDate(inquiry.timestamp)}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function editProduct(id) {
+      const product = await getProductById(id);
+      if (!product) {
+        return;
+      }
       editingProductId = product.id;
       document.getElementById("productId").value = product.id;
       document.getElementById("productName").value = product.name || "";
@@ -195,7 +192,6 @@
 
     async function handleProductSubmit(event) {
       event.preventDefault();
-
       const productIdValue = document.getElementById("productId").value;
       const name = document.getElementById("productName").value.trim();
       const price = parseFloat(document.getElementById("price").value);
@@ -210,15 +206,11 @@
         return;
       }
 
-      const products = getProducts();
-      const existingProduct = products.find((item) => String(item.id) === String(productIdValue));
+      const existingProduct = productIdValue ? await getProductById(productIdValue) : null;
       const thumbnailPath = thumbnailFile ? await readFileAsDataURL(thumbnailFile) : (existingProduct ? existingProduct.thumbnailPath : "");
-      const imagePaths = galleryFiles && galleryFiles.length
-        ? await readMultipleFilesAsDataURLs(galleryFiles)
-        : (existingProduct ? existingProduct.imagePaths || [] : []);
-
+      const imagePaths = galleryFiles && galleryFiles.length ? await readMultipleFilesAsDataURLs(galleryFiles) : (existingProduct ? existingProduct.imagePaths || [] : []);
       const productPayload = {
-        id: existingProduct ? existingProduct.id : createProductId(),
+        id: existingProduct ? existingProduct.id : await createProductId(),
         name,
         shortDescription,
         fullDescription,
@@ -228,30 +220,27 @@
         downloadFilePath: normalizeDownloadPath(downloadFileName)
       };
 
-      if (existingProduct) {
-        const index = products.findIndex((item) => String(item.id) === String(productIdValue));
-        products[index] = productPayload;
-      } else {
-        products.push(productPayload);
-      }
+      await initializeFirebase();
+      const docId = String(productPayload.id);
+      await db.collection("products").doc(docId).set({
+        ...productPayload,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
 
-      saveProducts(products);
       resetProductForm();
-      loadAdminDashboard();
+      await loadAdminDashboard();
       alert(existingProduct ? "Product updated." : "Product added.");
     }
 
-    function deleteProduct(id) {
+    async function deleteProduct(id) {
       if (!confirm("Delete this product from the store?")) {
         return;
       }
-
-      const products = getProducts().filter((product) => String(product.id) !== String(id));
-      saveProducts(products);
+      await deleteProductById(id);
       if (editingProductId === id) {
         resetProductForm();
       }
-      loadAdminDashboard();
+      await loadAdminDashboard();
     }
 
     function resetProductForm() {
@@ -260,130 +249,9 @@
       document.getElementById("productId").value = "";
     }
 
-    function displayOrdersByProduct(products, orders) {
-      const container = document.getElementById("ordersContainer");
-      if (!orders.length) {
-        container.innerHTML = '<p class="empty-state">No orders yet</p>';
-        return;
-      }
-
-      const ordersByProduct = {};
-      orders.forEach((order) => {
-        if (!ordersByProduct[order.productId]) {
-          ordersByProduct[order.productId] = [];
-        }
-        ordersByProduct[order.productId].push(order);
-      });
-
-      let html = "";
-      Object.entries(ordersByProduct).forEach(([productId, productOrders]) => {
-        const product = products.find((item) => String(item.id) === String(productId));
-        const productName = product ? product.name : `Product ${productId}`;
-        html += `
-          <div class="admin-order-group">
-            <h4>📦 ${escapeHtml(productName)} (${productOrders.length} orders)</h4>
-            <table class="admin-table">
-              <thead><tr><th>Buyer Name</th><th>Email</th><th>Date</th><th>Status</th></tr></thead>
-              <tbody>
-                ${productOrders.map((order) => `
-                  <tr>
-                    <td>${escapeHtml(order.buyerName)}</td>
-                    <td>${escapeHtml(order.buyerEmail)}</td>
-                    <td>${formatDate(order.timestamp)}</td>
-                    <td><span style="color: var(--success);">✓ Completed</span></td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function displayInqueriesByProduct(products, inquiries) {
-      const container = document.getElementById("inquiriesContainer");
-      if (!inquiries.length) {
-        container.innerHTML = '<p class="empty-state">No inquiries yet</p>';
-        return;
-      }
-
-      const inquiriesByProduct = {};
-      inquiries.forEach((inquiry) => {
-        if (!inquiriesByProduct[inquiry.productId]) {
-          inquiriesByProduct[inquiry.productId] = [];
-        }
-        inquiriesByProduct[inquiry.productId].push(inquiry);
-      });
-
-      let html = "";
-      Object.entries(inquiriesByProduct).forEach(([productId, productInquiries]) => {
-        const product = products.find((item) => String(item.id) === String(productId));
-        const productName = product ? product.name : `Product ${productId}`;
-        html += `
-          <div class="admin-order-group">
-            <h4>💬 ${escapeHtml(productName)} (${productInquiries.length} inquiries)</h4>
-            ${productInquiries.map((inquiry) => `
-              <div class="inquiry-card">
-                <p><strong>${escapeHtml(inquiry.buyerName)}</strong> <em>${escapeHtml(inquiry.buyerEmail)}</em></p>
-                <p>${escapeHtml(inquiry.message)}</p>
-                <p class="text-muted small">${formatDate(inquiry.timestamp)}</p>
-              </div>
-            `).join("")}
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function displayRawData(products, orders, inquiries) {
-      const data = {
-        products,
-        orders,
-        inquiries,
-        exportedAt: new Date().toISOString()
-      };
-      document.getElementById("rawData").textContent = JSON.stringify(data, null, 2);
-    }
-
-    function exportDataAsJSON() {
-      const data = {
-        products: getProducts(),
-        orders: getOrders(),
-        inquiries: getInquiries(),
-        exportedAt: new Date().toISOString()
-      };
-
-      const jsonString = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `model-store-data-${new Date().toISOString().split("T")[0]}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function clearAllData() {
-      if (confirm("Delete all orders and inquiries? Products will stay in place.")) {
-        localStorage.setItem("orders", JSON.stringify([]));
-        localStorage.setItem("inquiries", JSON.stringify([]));
-        alert("Data cleared.");
-        loadAdminDashboard();
-      }
-    }
-
-    function loadSampleData() {
-      localStorage.setItem("products", JSON.stringify(SAMPLE_PRODUCTS));
-      localStorage.setItem("orders", JSON.stringify([]));
-      localStorage.setItem("inquiries", JSON.stringify([]));
-      alert("Sample data restored.");
-      loadAdminDashboard();
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      initializeStorage();
-      loadAdminDashboard();
+    document.addEventListener("DOMContentLoaded", async () => {
+      await initializeStorage();
+      await loadAdminDashboard();
     });
   </script>
 </body>

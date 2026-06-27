@@ -12,9 +12,7 @@
 <body>
   <nav class="navbar">
     <div class="navbar-container">
-      <a href="index.html" class="navbar-logo">
-        <span></span> ModelShop
-      </a>
+      <a href="index.html" class="navbar-logo">ModelShop</a>
       <div class="hamburger" id="hamburger">
         <span></span>
         <span></span>
@@ -69,12 +67,8 @@
     </div>
   </section>
 
-  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
-    <div class="container">
-      <p>&copy; 2024 3D Model Store. All rights reserved.</p>
-    </div>
-  </footer>
-
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="main.js"></script>
   <script>
     const hamburger = document.getElementById("hamburger");
@@ -97,9 +91,9 @@
       return params.get("id");
     }
 
-    function renderProduct() {
+    async function renderProduct() {
       const productId = getProductIdFromUrl();
-      const product = getProductById(productId);
+      const product = await getProductById(productId);
 
       if (!product) {
         document.body.innerHTML = "<div style='padding: 4rem; text-align: center; color: #e0e0ff;'><h1>Product not found</h1><p><a href='index.html'>Back to catalog</a></p></div>";
@@ -136,7 +130,7 @@
       document.getElementById("inquiryFormContainer").classList.toggle("hidden");
     });
 
-    document.getElementById("submitInquiry").addEventListener("click", () => {
+    document.getElementById("submitInquiry").addEventListener("click", async () => {
       const productId = getProductIdFromUrl();
       const name = document.getElementById("inquiryName").value.trim();
       const email = document.getElementById("inquiryEmail").value.trim();
@@ -147,7 +141,7 @@
         return;
       }
 
-      addInquiry(productId, name, email, message);
+      await addInquiry(productId, name, email, message);
       alert("Your question was saved. Thank you!");
       document.getElementById("inquiryFormContainer").classList.add("hidden");
       document.getElementById("inquiryName").value = "";
@@ -155,9 +149,9 @@
       document.getElementById("inquiryMessage").value = "";
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
-      initializeStorage();
-      renderProduct();
+    document.addEventListener("DOMContentLoaded", async () => {
+      await initializeStorage();
+      await renderProduct();
     });
   </script>
 </body>

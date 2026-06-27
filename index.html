@@ -12,9 +12,7 @@
 <body>
   <nav class="navbar">
     <div class="navbar-container">
-      <a href="index.html" class="navbar-logo">
-        <span></span> ModelShop
-      </a>
+      <a href="index.html" class="navbar-logo">ModelShop</a>
       <div class="hamburger" id="hamburger">
         <span></span>
         <span></span>
@@ -23,6 +21,7 @@
       <ul class="navbar-nav" id="navMenu">
         <li><a href="index.html" class="active">Catalog</a></li>
         <li><a href="#contact">Contact</a></li>
+        <li><a href="admin.html">Admin</a></li>
       </ul>
     </div>
   </nav>
@@ -38,7 +37,7 @@
     <div class="container">
       <h2>Our Collections</h2>
       <div class="product-grid" id="productGrid">
-        <!-- Products will be loaded here by JavaScript -->
+        <p class="text-muted">Loading products...</p>
       </div>
     </div>
   </section>
@@ -48,19 +47,11 @@
       <h2>Get in Touch</h2>
       <p>Have questions? Want to collaborate? Reach out to us!</p>
       <p><strong>Email:</strong> contact@modelshop.com</p>
-      <p><strong>Phone:</strong> +1 (555) 123-4567</p>
     </div>
   </section>
 
-  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-secondary);">
-    <div class="container">
-      <p>&copy; 2024 3D Model Store. All rights reserved.</p>
-      <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-        <a href="admin.html" style="font-size: 0.8rem; opacity: 0.5;">Admin</a>
-      </p>
-    </div>
-  </footer>
-
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="main.js"></script>
   <script>
     const hamburger = document.getElementById("hamburger");
@@ -78,13 +69,9 @@
       });
     }
 
-    function loadProductsCatalog() {
-      const products = getProducts();
+    async function loadProductsCatalog() {
       const grid = document.getElementById("productGrid");
-
-      if (!grid) {
-        return;
-      }
+      const products = await getProducts();
 
       if (!products.length) {
         grid.innerHTML = '<div class="empty-state">No products yet. Add your first model from the admin panel.</div>';
@@ -94,9 +81,9 @@
       grid.innerHTML = products.map((product) => createProductCard(product)).join("");
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      initializeStorage();
-      loadProductsCatalog();
+    document.addEventListener("DOMContentLoaded", async () => {
+      await initializeStorage();
+      await loadProductsCatalog();
     });
   </script>
 </body>
